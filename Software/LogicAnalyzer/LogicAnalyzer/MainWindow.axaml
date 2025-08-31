@@ -17,8 +17,7 @@
           <Separator/>
           <MenuItem Header="_Exit" Name="mnuExit"/>
         </MenuItem>
-      <MenuItem Header="_Settings" Name="mnuSettings">
-        <MenuItem Header="General..." Name="mnuGeneralSettings"></MenuItem>
+      <MenuItem Header="Network settings" IsEnabled="False" Name="mnuSettings">
         <MenuItem Header="Update network settings" Name="mnuNetSettings"></MenuItem>
       </MenuItem>
       <MenuItem Header="Profiles" Name="mnuProfiles" IsEnabled="False">
@@ -66,10 +65,10 @@
       <controls:SampleMarker Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Foreground="White" Background="Transparent" Name="sampleMarker"></controls:SampleMarker>
     </Grid>
 
-    
+
     <ScrollBar VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Orientation="Horizontal" DockPanel.Dock="Bottom" Name="scrSamplePos" AllowAutoHide="False"></ScrollBar>
     <controls:SamplePreviewer IsVisible="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="144" ZIndex="1000" Name="samplePreviewer" DockPanel.Dock="Bottom" Margin="0,-144,0,0"></controls:SamplePreviewer>
-        
+
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" RowDefinitions="Auto,*" ColumnDefinitions="*,340" DockPanel.Dock="Bottom" Name="grdContent">
       <controls:AnnotationViewer Name="annotationsViewer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0"></controls:AnnotationViewer>
       <ScrollViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="1">

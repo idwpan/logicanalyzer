@@ -63,7 +63,6 @@ namespace LogicAnalyzer
         KnownDevice? currentKnownDevice = null;
 
         ProfilesSet? profiles;
-        GeneralSettings generalSettings;
 
         public bool PreviewPinned { get { return samplePreviewer.Pinned; } set { samplePreviewer.Pinned = value; } }
 
@@ -122,7 +121,6 @@ namespace LogicAnalyzer
             mnuExit.Click += MnuExit_Click;
             mnuExport.Click += MnuExport_Click;
             mnuNetSettings.Click += MnuNetSettings_Click;
-            mnuGeneralSettings.Click += MnuGeneralSettings_Click;
             mnuDocs.Click += MnuDocs_Click;
             mnuAbout.Click += MnuAbout_Click;
             AddHandler(InputElement.KeyDownEvent, MainWindow_KeyDown, handledEventsToo: true);
@@ -174,15 +172,7 @@ namespace LogicAnalyzer
             RefreshPorts();
             LoadProfiles();
 
-            generalSettings = AppSettingsManager.GetSettings<GeneralSettings>("GeneralSettings.json") ?? new GeneralSettings();
-            tkInScreen.Minimum = generalSettings.MinSamples;
-            tkInScreen.Maximum = generalSettings.MaxSamples;
-            lblMinSamples.Text = generalSettings.MinSamples.ToString();
-            lblMaxSamples.Text = generalSettings.MaxSamples.ToString();
-            if (tkInScreen.Value < tkInScreen.Minimum)
-                tkInScreen.Value = tkInScreen.Minimum;
-            if (tkInScreen.Value > tkInScreen.Maximum)
-                tkInScreen.Value = tkInScreen.Maximum;
+            UpdateVisibleSamplesSlider();
 
             try
             {
@@ -190,10 +180,29 @@ namespace LogicAnalyzer
                 sgManager.Initialize(decoderProvider);
                 sgManager.DecodingComplete += SgManager_DecodingComplete;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 _ = this.ShowError("Error loading decoders.", "Cannot load Sigrok decoders. Make sure Python is installed on your computer. If, despite being installed, you still have problems, you can specify the path to the Python library in \"python.cfg\".");
             }
+        }
+
+        private void UpdateVisibleSamplesSlider(int? min = null, int? max = null)
+        {
+            // Keep current values unless new ones provided
+            if (min.HasValue)
+                tkInScreen.Minimum = min.Value;
+            if (max.HasValue)
+                tkInScreen.Maximum = max.Value;
+
+            // Update labels
+            lblMinSamples.Text = ((int)tkInScreen.Minimum).ToString();
+            lblMaxSamples.Text = ((int)tkInScreen.Maximum).ToString();
+
+            // Clamp current value to new range
+            if (tkInScreen.Value < tkInScreen.Minimum)
+                tkInScreen.Value = tkInScreen.Minimum;
+            if (tkInScreen.Value > tkInScreen.Maximum)
+                tkInScreen.Value = tkInScreen.Maximum;
         }
 
         private void LoadProfiles()
@@ -943,7 +952,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            copiedSamples = session.CaptureChannels.Select(c => c.Samples!.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
+            copiedSamples = session.CaptureChannels.Select(c => c.Samples.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
         }
 
         private async void SampleMarker_SamplesCutted(object? sender, SamplesEventArgs e)
@@ -954,7 +963,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            copiedSamples = session.CaptureChannels.Select(c => c.Samples!.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
+            copiedSamples = session.CaptureChannels.Select(c => c.Samples.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
             DeleteSamples(e);
         }
 
@@ -1078,6 +1087,7 @@ namespace LogicAnalyzer
 
 
             scrSamplePos.Maximum = totalSamples - 1;
+            UpdateVisibleSamplesSlider(max: totalSamples);
             updateSamplesInDisplay(firstSample - 1, (int)tkInScreen.Value);
 
         }
@@ -1134,44 +1144,6 @@ namespace LogicAnalyzer
             }
         }
 
-        private async void MnuGeneralSettings_Click(object? sender, RoutedEventArgs e)
-        {
-            // some defaults when not connected to a device
-            int minSamples = 1;
-            int maxSamples = 10000;
-
-            if (driver != null)
-            {
-                var channels = session?.CaptureChannels?.Select(c => (int)c.ChannelNumber).ToArray() ?? Enumerable.Range(0, driver.ChannelCount).ToArray();
-                var limits = driver.GetLimits(channels);
-                minSamples = limits.MinPreSamples + limits.MinPostSamples;
-                maxSamples = limits.MaxPreSamples + limits.MaxPostSamples;
-            }
-
-            var dlg = new GeneralSettingsDialog
-            {
-                MinSamples = generalSettings.MinSamples,
-                MaxSamples = generalSettings.MaxSamples,
-                MinSamplesLimit = minSamples,
-                MaxSamplesLimit = maxSamples
-            };
-
-            if (await dlg.ShowDialog<bool>(this))
-            {
-                generalSettings.MinSamples = dlg.MinSamples;
-                generalSettings.MaxSamples = dlg.MaxSamples;
-                AppSettingsManager.PersistSettings("GeneralSettings.json", generalSettings);
-                tkInScreen.Minimum = generalSettings.MinSamples;
-                tkInScreen.Maximum = generalSettings.MaxSamples;
-                lblMinSamples.Text = generalSettings.MinSamples.ToString();
-                lblMaxSamples.Text = generalSettings.MaxSamples.ToString();
-                if (tkInScreen.Value < tkInScreen.Minimum)
-                    tkInScreen.Value = tkInScreen.Minimum;
-                if (tkInScreen.Value > tkInScreen.Maximum)
-                    tkInScreen.Value = tkInScreen.Maximum;
-            }
-        }
-
         private async void MnuExport_Click(object? sender, RoutedEventArgs e)
         {
             try
@@ -1204,7 +1176,7 @@ namespace LogicAnalyzer
                         sb.Clear();
 
                         for (int buc = 0; buc < session.CaptureChannels.Length; buc++)
-                            sb.Append($"{session.CaptureChannels[buc].Samples![sample]},");
+                            sb.Append($"{session.CaptureChannels[buc].Samples[sample]},");
 
                         sb.Remove(sb.Length - 1, 1);
 
@@ -1243,6 +1215,8 @@ namespace LogicAnalyzer
                 sampleMarker.Bursts = session.Bursts;
 
                 syncUI();
+
+                UpdateVisibleSamplesSlider(max: session.TotalSamples);
 
                 scrSamplePos.Maximum = session.TotalSamples - 1;
                 updateSamplesInDisplay(session.PreTriggerSamples - 2, (int)tkInScreen.Value);
@@ -1527,6 +1501,8 @@ namespace LogicAnalyzer
                 return;
             }
 
+            UpdateVisibleSamplesSlider(max: session.TotalSamples);
+
             if (!await BeginCapture())
                 return;
 
@@ -1548,6 +1524,8 @@ namespace LogicAnalyzer
                 return;
 
             session = dialog.SelectedSettings;
+
+            UpdateVisibleSamplesSlider(max: session.TotalSamples);
 
             if (!await BeginCapture())
                 return;
@@ -1715,6 +1693,8 @@ namespace LogicAnalyzer
 
                     scrSamplePos.Maximum = session.TotalSamples - 1;
 
+                    UpdateVisibleSamplesSlider(max: session.TotalSamples);
+
                     updateSamplesInDisplay(Math.Max(session.PreTriggerSamples - 10, 0), (int)tkInScreen.Value);
 
                     LoadInfo();
@@ -1826,7 +1806,7 @@ namespace LogicAnalyzer
             bool hasDriver = driver != null && driver is not EmulatedAnalyzerDriver;
             bool isCapturing = hasDriver && driver!.IsCapturing;
             bool canCapture = hasDriver && !isCapturing;
-            bool canConfigureWiFi = hasDriver && driver!.DriverType == AnalyzerDriverType.Serial && (driver.DeviceVersion?.Contains("WIFI") ?? false);
+            bool canConfigureWiFi = hasDriver && driver.DriverType == AnalyzerDriverType.Serial && (driver.DeviceVersion?.Contains("WIFI") ?? false);
             bool hasCapture = session != null && session.CaptureChannels?.FirstOrDefault()?.Samples?.Length == session.TotalSamples;
 
             btnOpenClose.IsEnabled = !isCapturing;
@@ -1837,8 +1817,7 @@ namespace LogicAnalyzer
 
 
             mnuProfiles.IsEnabled = hasDriver && !isCapturing;
-            mnuSettings.IsEnabled = true;
-            mnuNetSettings.IsEnabled = canConfigureWiFi;
+            mnuSettings.IsEnabled = canConfigureWiFi;
             mnuSave.IsEnabled = hasCapture;
             mnuExport.IsEnabled = hasCapture;
 
