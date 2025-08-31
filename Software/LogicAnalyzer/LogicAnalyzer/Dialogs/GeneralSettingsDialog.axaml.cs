@@ -36,8 +36,9 @@ namespace LogicAnalyzer.Dialogs
                 await this.ShowError("Invalid settings", "Max samples must be greater than Min samples.");
                 return;
             }
-            MinSamples = (int)nudMin.Value;
-            MaxSamples = (int)nudMax.Value;
+
+            MinSamples = (int)(nudMin.Value ?? 10);
+            MaxSamples = (int)(nudMax.Value ?? 10000);
             Close(true);
         }
     }

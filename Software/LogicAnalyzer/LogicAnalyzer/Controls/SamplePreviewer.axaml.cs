@@ -76,8 +76,8 @@ namespace LogicAnalyzer.Controls
 
                     for (int chan = 0; chan < channelCount; chan++)
                     {
-                        byte curVal = Channels[chan].Samples[sample];
-                        byte prevVal = Channels[chan].Samples[prevSample];
+                        byte curVal = Channels[chan].Samples![sample];
+                        byte prevVal = Channels[chan].Samples![prevSample];
 
                         float y = chan * cHeight + (curVal != 0 ? high : low);
 

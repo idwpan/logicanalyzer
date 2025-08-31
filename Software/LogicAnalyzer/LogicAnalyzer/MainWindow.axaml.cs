@@ -98,7 +98,7 @@ namespace LogicAnalyzer
             sampleMarker.SamplesInserted += SampleMarker_SamplesInserted;
             sampleMarker.SamplesDeleted += SampleMarker_SamplesDeleted;
 
-           samplePreviewer.PinnedChanged += SamplePreviewer_PinnedChanged;
+            samplePreviewer.PinnedChanged += SamplePreviewer_PinnedChanged;
             samplePreviewer.ViewChanged += SamplePreviewer_ViewChanged;
 
             sampleViewer.PointerWheelChanged += SampleViewer_PointerWheelChanged;
@@ -133,7 +133,7 @@ namespace LogicAnalyzer
             {
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    if(!samplePreviewer.Pinned)
+                    if (!samplePreviewer.Pinned)
                         samplePreviewer.IsVisible = false;
                 });
             });
@@ -153,7 +153,7 @@ namespace LogicAnalyzer
                     driver.Dispose();
                 }
 
-                if(decoderProvider != null)
+                if (decoderProvider != null)
                     decoderProvider.Dispose();
             };
 
@@ -169,7 +169,7 @@ namespace LogicAnalyzer
             regionDisplays.Add(sampleMarker);
             regionDisplays.Add(annotationsViewer);
 
-             Task.Run(() => LoadKnownDevices());
+            Task.Run(() => LoadKnownDevices());
 
             RefreshPorts();
             LoadProfiles();
@@ -190,7 +190,7 @@ namespace LogicAnalyzer
                 sgManager.Initialize(decoderProvider);
                 sgManager.DecodingComplete += SgManager_DecodingComplete;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _ = this.ShowError("Error loading decoders.", "Cannot load Sigrok decoders. Make sure Python is installed on your computer. If, despite being installed, you still have problems, you can specify the path to the Python library in \"python.cfg\".");
             }
@@ -209,7 +209,7 @@ namespace LogicAnalyzer
 
             if (profiles != null)
             {
-                foreach(var profile in profiles.Profiles)
+                foreach (var profile in profiles.Profiles)
                 {
                     var mnuProfile = new MenuItem { Header = profile.Name };
                     mnuProfiles.Items.Add(mnuProfile);
@@ -270,7 +270,7 @@ namespace LogicAnalyzer
 
             if (driver.IsCapturing)
             {
-                if (! await this.ShowConfirm("Load profile", "There is a capture in progress. Do you want to stop it and load the profile?"))
+                if (!await this.ShowConfirm("Load profile", "There is a capture in progress. Do you want to stop it and load the profile?"))
                     return;
 
                 driver.StopCapture();
@@ -306,7 +306,8 @@ namespace LogicAnalyzer
                 },
                 InputParams = new MsBox.Avalonia.Dto.InputParams
                 {
-                    Label = "New profile name:", Multiline = false
+                    Label = "New profile name:",
+                    Multiline = false
                 },
                 Icon = MsBox.Avalonia.Enums.Icon.Setting,
                 ContentTitle = "Add profile",
@@ -318,7 +319,7 @@ namespace LogicAnalyzer
 
             var result = await dlg.ShowWindowDialogAsync(this);
 
-            if(result == "Save")
+            if (result == "Save")
             {
                 var profileName = dlg.InputValue;
 
@@ -343,7 +344,7 @@ namespace LogicAnalyzer
 
         private async void LblForget_PointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if(currentKnownDevice != null)
+            if (currentKnownDevice != null)
             {
 
                 if (await this.ShowConfirm("Forget device", "Are you sure you want to forget this device?"))
@@ -364,7 +365,7 @@ namespace LogicAnalyzer
         {
             var knownDevices = AppSettingsManager.GetSettings<List<KnownDevice>>("knownDevices.json");
 
-            if(knownDevices != null)
+            if (knownDevices != null)
                 this.knownDevices = knownDevices;
         }
 
@@ -393,7 +394,7 @@ namespace LogicAnalyzer
 
         private async void LblInfo_PointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if(driver != null)
+            if (driver != null)
             {
                 var dlg = new AnalyzerInfoDialog();
                 dlg.Initialize(driver);
@@ -406,7 +407,7 @@ namespace LogicAnalyzer
 
         private void ScrSamplePos_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
-            if(e.Delta.Y > 0)
+            if (e.Delta.Y > 0)
             {
                 var currentVal = scrSamplePos.Value;
                 int newVal = (int)(currentVal - scrSamplePos.Maximum / 20);
@@ -466,7 +467,7 @@ namespace LogicAnalyzer
                     var currentValue = scrSamplePos.Value;
                     currentValue += (int)increment;
 
-                    if(currentValue > scrSamplePos.Maximum)
+                    if (currentValue > scrSamplePos.Maximum)
                         currentValue = (int)scrSamplePos.Maximum;
 
                     updateSamplesInDisplay((int)currentValue, (int)tkInScreen.Value);
@@ -519,10 +520,10 @@ namespace LogicAnalyzer
 
         private void Visibility_PointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if(session?.CaptureChannels == null)
+            if (session?.CaptureChannels == null)
                 return;
 
-            foreach(var channel in session.CaptureChannels)
+            foreach (var channel in session.CaptureChannels)
                 channel.Hidden = false;
 
             UpdateVisibility();
@@ -540,7 +541,7 @@ namespace LogicAnalyzer
             {
                 tkInScreen.Value = Math.Min(tkInScreen.Maximum, tkInScreen.Value * 1.5);
             }
-            else if(e.Delta.Y < 0)
+            else if (e.Delta.Y < 0)
             {
                 tkInScreen.Value = Math.Max(tkInScreen.Minimum, tkInScreen.Value / 1.5);
             }
@@ -556,7 +557,7 @@ namespace LogicAnalyzer
             {
 
 
-                foreach(var grp in e.Annotations)
+                foreach (var grp in e.Annotations)
                 {
                     annotationsViewer.AddAnnotationsGroup(grp);
                 }
@@ -744,7 +745,7 @@ namespace LogicAnalyzer
                 {
                     var samples = channel.Samples;
 
-                    if(samples == null)
+                    if (samples == null)
                         continue;
 
                     int idx = Array.IndexOf(channelViewer.Channels, channel);
@@ -790,7 +791,7 @@ namespace LogicAnalyzer
             var drv = new EmulatedAnalyzerDriver(5);
             dlg.Initialize(drv);
 
-            if(await dlg.ShowDialog<bool>(this))
+            if (await dlg.ShowDialog<bool>(this))
             {
                 var stn = dlg.SelectedSettings;
                 var channels = stn.CaptureChannels.Select(c => c.ChannelNumber).ToArray();
@@ -840,7 +841,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            if(copiedSamples != null)
+            if (copiedSamples != null)
                 await InsertSamples(e.Sample, copiedSamples);
         }
 
@@ -895,7 +896,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            for(int chan = 0; chan < session.CaptureChannels.Length; chan++)
+            for (int chan = 0; chan < session.CaptureChannels.Length; chan++)
             {
                 var channel = session.CaptureChannels[chan];
                 var cSamples = channel.Samples;
@@ -942,7 +943,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            copiedSamples = session.CaptureChannels.Select(c => c.Samples.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
+            copiedSamples = session.CaptureChannels.Select(c => c.Samples!.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
         }
 
         private async void SampleMarker_SamplesCutted(object? sender, SamplesEventArgs e)
@@ -953,7 +954,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            copiedSamples = session.CaptureChannels.Select(c => c.Samples.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
+            copiedSamples = session.CaptureChannels.Select(c => c.Samples!.Skip(e.FirstSample).Take(e.SampleCount).ToArray());
             DeleteSamples(e);
         }
 
@@ -1189,7 +1190,7 @@ namespace LogicAnalyzer
                         sb.Clear();
 
                         for (int buc = 0; buc < session.CaptureChannels.Length; buc++)
-                            sb.Append($"{session.CaptureChannels[buc].Samples[sample]},");
+                            sb.Append($"{session.CaptureChannels[buc].Samples![sample]},");
 
                         sb.Remove(sb.Length - 1, 1);
 
@@ -1263,7 +1264,7 @@ namespace LogicAnalyzer
                     if (port == null)
                         return;
 
-                    switch(port.Port)
+                    switch (port.Port)
                     {
                         case "Autodetect":
                             driver = await BeginAutodetect();
@@ -1280,7 +1281,7 @@ namespace LogicAnalyzer
 
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     await this.ShowError("Error", $"Cannot connect to device: ({ex.Message}).");
                     return;
@@ -1441,7 +1442,7 @@ namespace LogicAnalyzer
                 return;
             }
 
-            if(driver.IsCapturing)
+            if (driver.IsCapturing)
                 return;
 
             var powerStatus = driver.GetVoltageStatus();
@@ -1454,7 +1455,7 @@ namespace LogicAnalyzer
 
             string[] parts = powerStatus.Split("_");
 
-            if(parts.Length == 2 )
+            if (parts.Length == 2)
             {
                 lblVoltage.Text = parts[0];
 
@@ -1534,7 +1535,7 @@ namespace LogicAnalyzer
 
             session = dialog.SelectedSettings;
 
-            if(!await BeginCapture())
+            if (!await BeginCapture())
                 return;
 
             this.Title = Version;
@@ -1542,7 +1543,7 @@ namespace LogicAnalyzer
             var settingsFile = $"cpSettings{driver.DriverType}.json";
             var settings = session.Clone();
 
-            foreach(var channel in settings.CaptureChannels)
+            foreach (var channel in settings.CaptureChannels)
                 channel.Samples = null;
 
             AppSettingsManager.PersistSettings(settingsFile, settings);
@@ -1677,7 +1678,7 @@ namespace LogicAnalyzer
 
                     if (ex.Samples != null)
                     {
-                        for(int buc = 0; buc < session.CaptureChannels.Length; buc++)
+                        for (int buc = 0; buc < session.CaptureChannels.Length; buc++)
                             ExtractSamples(session.CaptureChannels[buc], buc, ex.Samples);
                     }
 
@@ -1705,7 +1706,7 @@ namespace LogicAnalyzer
                     LoadInfo();
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await this.ShowError("Unhandled exception", $"{ex.Message} - {ex.StackTrace}");
             }
@@ -1728,7 +1729,7 @@ namespace LogicAnalyzer
         private string GenerateStringTrigger(ushort triggerPattern, int bitCount)
         {
             string value = "";
-            for(int buc = 0; buc < bitCount; buc++)
+            for (int buc = 0; buc < bitCount; buc++)
                 value += (triggerPattern & (1 << buc)) == 0 ? "0" : "1";
             return value;
         }
@@ -1811,7 +1812,7 @@ namespace LogicAnalyzer
             bool hasDriver = driver != null && driver is not EmulatedAnalyzerDriver;
             bool isCapturing = hasDriver && driver!.IsCapturing;
             bool canCapture = hasDriver && !isCapturing;
-            bool canConfigureWiFi = hasDriver && driver.DriverType == AnalyzerDriverType.Serial && (driver.DeviceVersion?.Contains("WIFI") ?? false);
+            bool canConfigureWiFi = hasDriver && driver!.DriverType == AnalyzerDriverType.Serial && (driver.DeviceVersion?.Contains("WIFI") ?? false);
             bool hasCapture = session != null && session.CaptureChannels?.FirstOrDefault()?.Samples?.Length == session.TotalSamples;
 
             btnOpenClose.IsEnabled = !isCapturing;
