@@ -1136,10 +1136,24 @@ namespace LogicAnalyzer
 
         private async void MnuGeneralSettings_Click(object? sender, RoutedEventArgs e)
         {
+            // some defaults when not connected to a device
+            int minSamples = 1;
+            int maxSamples = 10000;
+
+            if (driver != null)
+            {
+                var channels = session?.CaptureChannels?.Select(c => (int)c.ChannelNumber).ToArray() ?? Enumerable.Range(0, driver.ChannelCount).ToArray();
+                var limits = driver.GetLimits(channels);
+                minSamples = limits.MinPreSamples + limits.MinPostSamples;
+                maxSamples = limits.MaxPreSamples + limits.MaxPostSamples;
+            }
+
             var dlg = new GeneralSettingsDialog
             {
                 MinSamples = generalSettings.MinSamples,
-                MaxSamples = generalSettings.MaxSamples
+                MaxSamples = generalSettings.MaxSamples,
+                MinSamplesLimit = minSamples,
+                MaxSamplesLimit = maxSamples
             };
 
             if (await dlg.ShowDialog<bool>(this))
